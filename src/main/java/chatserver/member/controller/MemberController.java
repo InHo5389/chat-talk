@@ -1,6 +1,6 @@
 package chatserver.member.controller;
 
-import chatserver.member.common.auth.JwtTokenProvider;
+import chatserver.common.auth.JwtTokenProvider;
 import chatserver.member.domain.Member;
 import chatserver.member.dto.LoginResponse;
 import chatserver.member.dto.MemberJoinDto;

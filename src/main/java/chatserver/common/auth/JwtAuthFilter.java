@@ -1,4 +1,4 @@
-package chatserver.member.common.auth;
+package chatserver.common.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

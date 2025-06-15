@@ -1,6 +1,6 @@
-package chatserver.member.common.config;
+package chatserver.common.config;
 
-import chatserver.member.common.auth.JwtAuthFilter;
+import chatserver.common.auth.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
