@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 // 특정 url패턴에 대해서는 Authenticaiton 요구 x
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/member/join","/member/login").permitAll()
+                        .requestMatchers("/member/join","/member/login","/connect/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
