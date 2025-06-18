@@ -10,4 +10,8 @@ import java.util.Optional;
 
 public interface ChatParticipantRepository extends JpaRepository<ChatParticipant, Long> {
     Optional<ChatParticipant> findByChatRoomAndMember(ChatRoom chatRoom, Member member);
+
+    List<ChatParticipant> findAllByMember(Member member);
+
+    List<ChatParticipant> findByChatRoom(ChatRoom chatRoom);
 }
