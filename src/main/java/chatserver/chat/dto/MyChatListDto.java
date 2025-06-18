@@ -14,14 +14,14 @@ public class MyChatListDto {
 
     private Long roomId;
     private String roomName;
-    private String isGroupChat;
+    private boolean isGroupChat;
     private Long unReadCount;
 
     public static MyChatListDto fromEntity(ChatParticipant chatParticipant,Long unReadCount) {
         return MyChatListDto.builder()
                 .roomId(chatParticipant.getChatRoom().getId())
                 .roomName(chatParticipant.getChatRoom().getName())
-                .isGroupChat(chatParticipant.getChatRoom().getIsGroupChat().toString())
+                .isGroupChat(chatParticipant.getChatRoom().getIsGroupChat())
                 .unReadCount(unReadCount)
                 .build();
     }
