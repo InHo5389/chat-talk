@@ -45,22 +45,21 @@ public class StompHandler implements ChannelInterceptor {
             log.info("StompHandler preSend connect 시 토큰 유효성 검증 완료 : {}", StompCommand.CONNECT == accessor.getCommand());
         }
 
-        if (StompCommand.SUBSCRIBE == accessor.getCommand()) {
-            String bearerToken = accessor.getFirstNativeHeader("Authorization");
-            String token = bearerToken.substring(7);
-
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-            String email = claims.getSubject();
-            String roomId = accessor.getDestination().split("/")[2];
-
-            if (!chatService.isRoomParticipant(email, Long.parseLong(roomId))) {
-                throw new RuntimeException("해당 room 권한이 없습니다.");
-            }
-        }
+//        if(StompCommand.SUBSCRIBE == accessor.getCommand()){
+//            System.out.println("subscribe 검증");
+//            String bearerToken = accessor.getFirstNativeHeader("Authorization");
+//            String token = bearerToken.substring(7);
+//            Claims claims = Jwts.parserBuilder()
+//                    .setSigningKey(secretKey)
+//                    .build()
+//                    .parseClaimsJws(token)
+//                    .getBody();
+//            String email = claims.getSubject();
+//            String roomId = accessor.getDestination().split("/")[2];
+//            if(!chatService.isRoomParticipant(email, Long.parseLong(roomId))){
+//                throw new RuntimeException("해당 room에 권한이 없습니다.");
+//            }
+//        }
         return message;
     }
 }

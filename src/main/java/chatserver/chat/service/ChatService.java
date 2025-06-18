@@ -6,6 +6,7 @@ import chatserver.chat.domain.ChatRoom;
 import chatserver.chat.domain.ReadStatus;
 import chatserver.chat.dto.ChatMessageDto;
 import chatserver.chat.dto.ChatRoomListDto;
+import chatserver.chat.dto.MyChatListDto;
 import chatserver.chat.repository.ChatMessageRepository;
 import chatserver.chat.repository.ChatParticipantRepository;
 import chatserver.chat.repository.ChatRoomRepository;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -100,6 +102,10 @@ public class ChatService {
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new RuntimeException("회원이 존재하지 않습니다."));
 
+        if (!chatRoom.getIsGroupChat()) {
+            throw new RuntimeException("그룹 채팅이 아닙니다.");
+        }
+
         Optional<ChatParticipant> optionalChatParticipant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
         if (optionalChatParticipant.isEmpty()) {
             addParticipantToRoom(chatRoom, member);
@@ -145,5 +151,98 @@ public class ChatService {
 
         return chatRoom.getChatParticipants().stream()
                 .anyMatch(participant -> participant.equals(member));
+    }
+
+    @Transactional
+    public void messageRead(Long roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(
+                () -> new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        List<ReadStatus> readStatuses = readStatusRepository.findByChatRoomAndMemberAndIsReadFalse(chatRoom, member);
+        readStatuses.forEach(readStatus -> readStatus.updateIsRead(true));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyChatListDto> getMyChatRooms() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByMember(member);
+        List<MyChatListDto> chatListDtos = new ArrayList<>();
+        for (ChatParticipant participant : chatParticipants) {
+            Long count = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(participant.getChatRoom(), member);
+            MyChatListDto myChatListDto = MyChatListDto.builder()
+                    .roomId(participant.getChatRoom().getId())
+                    .roomName(participant.getChatRoom().getName())
+                    .isGroupChat(participant.getChatRoom().getIsGroupChat())
+                    .unReadCount(count)
+                    .build();
+
+            chatListDtos.add(myChatListDto);
+        }
+
+        return chatListDtos;
+    }
+
+    // 참여자 객체 삭제
+
+    /**
+     * 1. 참여자 객체만 삭제
+     * 2. 모두가 나간 경우 읽음 여부 등 삭제
+     */
+    @Transactional
+    public void leaveGroupChatRoom(Long roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(
+                () -> new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        if (!chatRoom.getIsGroupChat()) {
+            throw new RuntimeException("단체 채팅방이 아닙니다.");
+        }
+
+        ChatParticipant participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member).orElseThrow(
+                () -> new RuntimeException("회원이 ㅁ존재하지 않습니다."));
+        chatParticipantRepository.delete(participant);
+
+        List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
+        if (chatParticipants.isEmpty()) {
+            chatRoomRepository.delete(chatRoom);
+        }
+    }
+
+    @Transactional
+    public Long getOrCreatePrivateRoom(Long otherMemberId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        Member otherMember = memberRepository.findById(otherMemberId).orElseThrow(
+                () -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        // 나와 상대방이 1:1 채팅에 이미 참석하고 있다면 해당 roomId return
+        Optional<ChatRoom> chatRoom = chatParticipantRepository.findExistPrivateRoom(member.getId(), otherMember.getId());
+        if (chatRoom.isPresent()) {
+            return chatRoom.get().getId();
+        }
+        // 1:1 채팅방이 없을 경우 채팅방 개설
+        ChatRoom newRoom = ChatRoom.builder()
+                .isGroupChat(false)
+                .name(member.getName() + "-" + otherMember.getName())
+                .build();
+        chatRoomRepository.save(newRoom);
+        // 두사람 모두 참여자로 추가
+        addParticipantToRoom(newRoom, member);
+        addParticipantToRoom(newRoom, otherMember);
+        return newRoom.getId();
     }
 }

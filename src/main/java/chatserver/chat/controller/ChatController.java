@@ -1,9 +1,12 @@
 package chatserver.chat.controller;
 
+import chatserver.chat.dto.MyChatListDto;
 import chatserver.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,5 +36,28 @@ public class ChatController {
     @GetMapping("/history/{roomId}")
     public ResponseEntity<?> getChatHistory(@PathVariable Long roomId) {
         return ResponseEntity.ok().body(chatService.getChatHistory(roomId));
+    }
+
+    @PostMapping("/room/{roomId}/read")
+    public ResponseEntity<?> messageRead(@PathVariable Long roomId) {
+        chatService.messageRead(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my/rooms")
+    public ResponseEntity<?> getMyChatRooms() {
+        return ResponseEntity.ok().body(chatService.getMyChatRooms());
+    }
+
+    @DeleteMapping("/room/group/{roomId}/leave")
+    public ResponseEntity<?> leaveGroupChatRoom(@PathVariable Long roomId){
+        chatService.leaveGroupChatRoom(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/room/private/create")
+    public ResponseEntity<?> getOrCreatePrivateRoom(@RequestParam Long otherMemberId) {
+        Long roomId = chatService.getOrCreatePrivateRoom(otherMemberId);
+        return ResponseEntity.ok().body(roomId);
     }
 }
