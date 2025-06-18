@@ -1,21 +1,22 @@
 package chatserver.chat.dto;
 
 import chatserver.chat.domain.ChatMessage;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
-@Getter
-@ToString
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageDto {
 
+    private Long roomId;
     private String senderEmail;
     private String message;
 
     public static ChatMessageDto fromEntity(ChatMessage chatMessage) {
-        return new ChatMessageDto(chatMessage.getMember().getEmail(), chatMessage.getContent());
+        return ChatMessageDto.builder()
+                .senderEmail(chatMessage.getMember().getEmail())
+                .message(chatMessage.getContent())
+                .build();
     }
 }
